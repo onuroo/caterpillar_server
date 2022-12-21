@@ -72,6 +72,7 @@ const createRoom = (user_name, room_name) => {
               },
             ],
             foods: [],
+            growth: false,
           }
         ],
         wall: {
@@ -133,6 +134,7 @@ const joinRoom = (name, room_name) => {
               },
             ],
             foods: [],
+            growth: false,
           }
         ],
         winner: null,
@@ -151,7 +153,7 @@ const getRooms = () => rooms;
 const getUsers = (room_name) => {
   const finded_room = rooms.find(room => room.name.trim().toLowerCase() === room_name?.trim().toLowerCase());
   if (finded_room) {
-    return { users: finded_room.users }
+    return {users: finded_room.users}
   } else {
     if (!finded_room) return { error: "No room available" }
   }
@@ -228,7 +230,10 @@ const getBoard = (room_name) => {
 
       let finded = false;
         while (!finded) {
-          const randomX = randomIntFromInterval(0, 380);
+
+          const min_x_value = user_index === 0 ? 0 : wall.x;
+          const max_x_value = user_index === 0 ? wall.x - 20 : 780;
+          const randomX = randomIntFromInterval(min_x_value, max_x_value);
           const randomY = randomIntFromInterval(0, 380);
           console.log('111', randomX, randomY);
           if (!tiles.find(tile => tile.x === randomX && tile.y === randomY) && !foods.filter(food => food.state).find(food => food.x === randomX && food.y === randomY)) {
@@ -251,6 +256,7 @@ const getBoard = (room_name) => {
     console.log('foods_arrayfoods_array', foods_array)
 
     let new_wall = wall;
+    let growth_action = false;
 
     const updatedFoods = foods_array.filter(i => i.state).map((food) => {
       const foodX = food.x;
@@ -258,10 +264,12 @@ const getBoard = (room_name) => {
       console.log('foodX, foodY', foodX, foodY);
 
       const has_eat_action = tiles.find(tile => tile.x === foodX && tile.y === foodY);
+      if (tiles.findIndex(tile => tile.x === foodX && tile.y === foodY) > -1) {
+        growth_action = true;
+      }
 
       console.log('has_eat_action', has_eat_action, JSON.stringify(tiles))
       
-
       if (has_eat_action) {
 
         const randomX = randomIntFromInterval(0, 380);
@@ -282,9 +290,11 @@ const getBoard = (room_name) => {
     });
 
     console.log('updatedFoods', updatedFoods)
+    console.log('growth_action', growth_action)
     return {
       new_foods: updatedFoods,
-      new_wall: new_wall
+      new_wall: new_wall,
+      growth_action
     };
   };
 
@@ -340,7 +350,40 @@ const getBoard = (room_name) => {
     const updated_users = board.users.map((user, user_index) => {
       console.log('user.foods', user.foods)
 
-      let new_tiles_array = user.tiles.map((tile, index) => {
+      let new_tiles_array = null;
+      
+      if (user.growth) {
+        new_tiles_array = user.tiles;
+        new_tiles_array.splice(1, 0, user.tiles[0]);
+
+        new_tiles_array = user.tiles.map((tile, index) => {
+
+          if (index === 0) {
+            const direction = user.direction || tile.direction
+            const { x, y } = setDirectionToCoordinates(tile.x, tile.y, direction)
+            return {
+              x,
+              y,
+              direction,
+            }
+          } else return tile;
+        })
+
+
+      } else {
+        new_tiles_array = user.tiles.map((tile, index) => {
+
+          // if (index === 0) {
+          //   const direction = user.direction || tile.direction
+          //   const { x, y } = setDirectionToCoordinates(tile.x, tile.y, direction)
+          //   return {
+          //     x,
+          //     y,
+          //     direction,
+          //   }
+          // } 
+
+
         if (index === 0) {
           const direction = user.direction || tile.direction
           const { x, y } = setDirectionToCoordinates(tile.x, tile.y, direction)
@@ -359,8 +402,37 @@ const getBoard = (room_name) => {
           }
         }
       });
+      }
 
-      const { new_foods, new_wall } = checkEating(new_tiles_array, user.foods, user.name, user_index, wall);
+     
+
+      const { new_foods, new_wall, growth_action } = checkEating(new_tiles_array, user.foods, user.name, user_index, wall);
+
+      let growth = growth_action
+      console.log('growth111', growth);
+
+      // if (tile_action_index) {
+      //   new_tiles_array = user.tiles.map((tile, index) => {
+      //     if (index === 0) {
+      //       const direction = user.direction || tile.direction
+      //       const { x, y } = setDirectionToCoordinates(tile.x, tile.y, direction)
+      //       return {
+      //         x,
+      //         y,
+      //         direction,
+      //       }
+      //     } else {
+      //       const direction = index === 1 ? user.direction || user.tiles[index - 1].direction : user.tiles[index - 1].direction;
+      //       const { x, y } = setDirectionToCoordinates(tile.x, tile.y, tile.direction)
+      //       return {
+      //         x,
+      //         y,
+      //         direction: direction,
+      //       }
+      //     }
+      //   });
+      // }
+
 
       updated_wall = new_wall;
 
@@ -369,6 +441,7 @@ const getBoard = (room_name) => {
         foods: new_foods,
         direction: null,
         tiles: new_tiles_array,
+        growth,
       }
     });
     console.log('updated_wall', updated_wall)

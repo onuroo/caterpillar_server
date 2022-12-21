@@ -20,6 +20,7 @@ io.on('connection', (socket) => {
                 if (board.started) {
                     socket.emit('gameUpdate', {board});
                 } else if ((board.winner || board.loser) && !board.started) {
+                    socket.emit('gameUpdate', {board});
                     clearInterval(interval);
                 }
             }
@@ -59,8 +60,7 @@ io.on('connection', (socket) => {
     socket.on('getUsers', ({ room_name }, callback) => {
         const {users, error} = getUsers(room_name);
         if (error) return callback(error);
-        // io.in(room_name).emit('getUsers', users)
-        socket.emit('getUsers', users)
+        io.in(room_name).emit('getUsers', {users})
         callback()
     });
 
@@ -69,7 +69,7 @@ io.on('connection', (socket) => {
         if (error) return callback(error);
         socket.join(room.name);
         io.in(room.name).emit('notification', { title: 'Someone\'s here', description: `${user_name} just entered the room` })
-        io.in(room.name).emit('users', getUsers(room.name))
+        io.in(room.name).emit('getUsers', getUsers(room.name))
         callback();
     });
     
@@ -78,7 +78,8 @@ io.on('connection', (socket) => {
         if (error) return callback(error);
         socket.join(room.name);
         io.in(room.name).emit('notification', { title: 'Someone\'s here', description: `${user_name} just entered the room` })
-        io.in(room.name).emit('users', getUsers(room.name))
+        io.in(room.name).emit('getUsers', getUsers(room.name))
+        // socket.emit('getUsers', getUsers(room.name))
         callback();
     });
 
