@@ -351,12 +351,12 @@ const getBoard = (room_name) => {
       console.log('user.foods', user.foods)
 
       let new_tiles_array = null;
-      
+        console.log('user.growth', user.growth)
       if (user.growth) {
         new_tiles_array = user.tiles;
         new_tiles_array.splice(1, 0, user.tiles[0]);
 
-        new_tiles_array = user.tiles.map((tile, index) => {
+        new_tiles_array = new_tiles_array.map((tile, index) => {
 
           if (index === 0) {
             const direction = user.direction || tile.direction
@@ -365,6 +365,14 @@ const getBoard = (room_name) => {
               x,
               y,
               direction,
+            }
+          } else if (index === 1) {
+            const direction = user.direction || new_tiles_array[index - 1].direction;
+            // const { x, y } = setDirectionToCoordinates(tile.x, tile.y, tile.direction)
+            return {
+              x: tile.x,
+              y: tile.y,
+              direction: direction,
             }
           } else return tile;
         })
